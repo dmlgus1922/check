@@ -227,5 +227,39 @@ def get_event_detail(event_id):
         print(f"An error occurred: {e}")
         return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
 
+@app.route('/api/events/<int:event_id>', methods=['DELETE'])
+@token_required
+def delete_event(event_id, current_user_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # 먼저 이벤트가 현재 사용자의 것인지 확인
+        cursor.execute('SELECT user_id FROM events WHERE id = %s', (event_id,))
+        event = cursor.fetchone()
+
+        if not event:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': '해당 이벤트를 찾을 수 없습니다.'}), 404
+
+        if event['user_id'] != current_user_id:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': '이벤트를 삭제할 권한이 없습니다.'}), 403
+
+        # 이벤트 삭제
+        cursor.execute('DELETE FROM events WHERE id = %s', (event_id,))
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({'success': True}), 200
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
+
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

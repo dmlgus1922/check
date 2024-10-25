@@ -19,6 +19,24 @@ function EventList() {
     fetchEvents();
   }, []);
 
+  const handleDelete = async (eventId) => {
+    // 삭제 확인 다이얼로그
+    if (window.confirm('해당 이벤트를 삭제하시겠습니까?')) {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(`http://localhost:5000/api/events/${eventId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        // 삭제 후 목록 업데이트
+        setEvents(events.filter(event => event.id !== eventId));
+      } catch (err) {
+        setError('이벤트 삭제에 실패했습니다.');
+      }
+    }
+  };
+
   if (error) {
     return <div className="container mx-auto my-8">{error}</div>;
   }
@@ -39,6 +57,12 @@ function EventList() {
               </h2>
               <p className="text-gray-600">날짜: {event.event_date}</p>
               <p className="text-gray-600">작성자: {event.user_email}</p>
+              <button
+                onClick={() => handleDelete(event.id)}
+                className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              >
+                삭제
+              </button>
             </div>
           ))}
         </div>
